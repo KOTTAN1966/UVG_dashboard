@@ -1,18 +1,19 @@
-# UVG-Dashboard (Streamlit Cloud)
+# UVG-Dashboard (Streamlit-Version)
+Dieses Dashboard dient der strukturierten Erhebung und Auswertung von Prozessen, Fallzahlen, Personalausstattung und Überlastungsindikatoren im Bereich Unterhaltsvorschuss.
 
-Dieses Dashboard ermöglicht die Erfassung und Bewertung von Prozessen und Personalausstattung im Bereich Unterhaltsvorschuss (UVG).
-
-## 📦 Setup
-1. Installiere Streamlit:
+## Starten (lokal)
+1. Installiere die Abhängigkeiten:
 ```
-pip install streamlit
+pip install -r requirements.txt
 ```
 
-2. Starte die App lokal:
+2. Starte das Dashboard:
 ```
 streamlit run uvg_dashboard.py
 ```
 
-## ☁️ Deployment auf Streamlit Cloud
-- Lade dieses Repository zu GitHub hoch
-- Deploye über https://streamlit.io/cloud
+## Funktionen
+- TOP 10 Prozesseingabe
+- Fallzahlen- & Personalabfrage
+- Überlastungsanalyse mit Tacho
+- Ampelsystem zur Bewertung

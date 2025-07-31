@@ -1,59 +1,92 @@
-
 import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="UVG-Prozess- & Personal-Dashboard", layout="centered")
 
 st.title("💼 Prozess- und Personalanalyse – Unterhaltsvorschuss")
 
-# Modul 1 – Reifegrad
-st.header("1️⃣ Reifegradanalyse")
-proz_doku = st.selectbox("Wie ist der Prozess dokumentiert?", ["nicht", "grob", "detailliert"])
-aufgaben_verteilung = st.slider("Wie eindeutig ist die Aufgabenverteilung?", 1, 5, 3)
+# Abschnitt 1 – Prozessorganisation (TOP 10)
+st.header("1️⃣ TOP 10 Prozesse mit hohem Aufwand")
+top_prozesse = []
+for i in range(1, 11):
+    p = st.text_input(f"{i}. Prozessbezeichnung", key=f"prozess_{i}")
+    if p:
+        top_prozesse.append(p)
 
-# Modul 2 – Personalbewertung
-st.header("2️⃣ Personalbewertung")
-pers_einsch = st.radio("Wie bewerten Sie die Personalausstattung?", ["deutlich zu gering", "eher zu gering", "passend", "eher zu hoch", "zu hoch"])
-ueberlastung = st.radio("Gibt es regelmäßig Überlastung?", ["ja", "nein", "gelegentlich"])
-ueberstunden = st.slider("Wie häufig fallen Überstunden an?", 1, 5, 3)
-balance = st.slider("Wie ausgewogen ist das Verhältnis Aufgaben/Personal?", 1, 5, 3)
+prozessdaten = []
+for p in top_prozesse:
+    st.subheader(f"Details zu: {p}")
+    schnittstellen_intern = st.text_input(f"Interne Schnittstellen bei {p}", key=f"int_{p}")
+    schnittstellen_extern = st.text_input(f"Externe Schnittstellen bei {p}", key=f"ext_{p}")
+    digital = st.text_input(f"Digitale Unterstützung bei {p}", key=f"dig_{p}")
+    medienbruch = st.radio(f"Medienbrüche vorhanden bei {p}?", ["ja", "nein", "teilweise"], key=f"med_{p}")
+    prozessklar = st.slider(f"Klarheit der Prozessbeschreibung bei {p} (1 = unklar, 5 = klar)", 1, 5, 3, key=f"klar_{p}")
+    prozessdaten.append({"Prozess": p, "Medienbruch": medienbruch, "Prozessklarheit": prozessklar})
 
-# Modul 3 – Bearbeitungszeiten
-st.header("3️⃣ Fallzahlen & Bearbeitungszeit")
-fallzahl = st.number_input("Fallzahl pro Jahr", min_value=0, value=800)
-bearb_zeit = st.number_input("Ø Bearbeitungszeit pro Fall (Minuten)", min_value=0, value=45)
-produktivstunden = st.number_input("Produktivstunden pro VZÄ", min_value=1, value=1400)
+# Abschnitt 2 – Fallzahlen
+tab_fallzahlen = []
+st.header("2️⃣ Fallzahlen je Prozess")
+for p in top_prozesse:
+    fz = st.number_input(f"Fallzahl pro Jahr für {p}", min_value=0, value=0, key=f"fz_{p}")
+    tab_fallzahlen.append({"Prozess": p, "Fallzahl": fz})
 
-gesamtstunden = (fallzahl * bearb_zeit) / 60
-bedarf_vzae = gesamtstunden / produktivstunden
+# Abschnitt 3 – Personalausstattung
+st.header("3️⃣ Personalausstattung")
+anzahl_mitarb = st.number_input("Anzahl Mitarbeitende im Bereich", min_value=0, value=0)
+vzae = st.number_input("Vollzeitäquivalente (VZÄ)", min_value=0.0, value=0.0, step=0.1)
+abwesenheit = st.slider("Geschätzte Abwesenheitsquote (%)", 0, 100, 10)
+
+# Abschnitt 4 – Überlastungsindikatoren
+st.header("4️⃣ Überlastungsindikatoren")
+ind_1 = st.checkbox("Rückstaus / unbearbeitete Fälle")
+ind_2 = st.checkbox("Regelmäßige Überstunden")
+ind_3 = st.checkbox("Hohe Krankenstände / Fluktuation")
+ind_4 = st.checkbox("Hinweise auf qualitative Überlastung (z. B. Beschwerden, Fehler)")
+
+indikator_summe = sum([ind_1, ind_2, ind_3, ind_4])
 
 st.markdown("---")
-st.header("📊 Auswertung")
+st.header("📊 Dashboard – Übersicht")
 
-# Reifegrad-Bewertung
-if proz_doku == "detailliert":
-    reifegrad = "🟢 Hoch"
-elif proz_doku == "grob":
-    reifegrad = "🟠 Mittel"
-else:
-    reifegrad = "🔴 Niedrig"
-st.subheader("Reifegrad")
-st.write(f"Dokumentation: {proz_doku} → {reifegrad}")
+# Bewertung je Prozess (Ampel anhand Prozessklarheit und Medienbrüchen)
+st.subheader("Prozessstatus")
+for eintrag in prozessdaten:
+    farbe = "🟢" if eintrag["Prozessklarheit"] >= 4 and eintrag["Medienbruch"] == "nein" else ("🟡" if eintrag["Prozessklarheit"] >= 3 else "🔴")
+    st.write(f"{eintrag['Prozess']}: {farbe} Klarheit: {eintrag['Prozessklarheit']} – Medienbruch: {eintrag['Medienbruch']}")
 
-# Personaleinschätzung Ampel
-if pers_einsch in ["deutlich zu gering", "eher zu gering"]:
-    personal_ampel = "🔴 Unterbesetzung"
-elif pers_einsch in ["eher zu hoch", "zu hoch"]:
-    personal_ampel = "🟢 Überdeckung"
-else:
-    personal_ampel = "🟡 Ausgeglichen"
+# Personalbelastung (Fälle pro VZÄ)
+st.subheader("📈 Personalbelastung")
+for eintrag in tab_fallzahlen:
+    fallzahl = eintrag["Fallzahl"]
+    prozess = eintrag["Prozess"]
+    if vzae > 0:
+        faelle_pro_vzae = fallzahl / vzae
+        status = "🟢" if faelle_pro_vzae < 200 else ("🟡" if faelle_pro_vzae < 400 else "🔴")
+        st.write(f"{prozess}: {fallzahl} Fälle / {vzae:.1f} VZÄ → {faelle_pro_vzae:.1f} Fälle/VZÄ → {status}")
 
-st.subheader("Personalbewertung")
-st.write(f"Einschätzung: {pers_einsch} → {personal_ampel}")
+# Überlastung gesamt – Zeigerinstrument (Gauge)
+st.subheader("🔎 Überlastung")
+ampel = "🟢" if indikator_summe == 0 else ("🟡" if indikator_summe <= 2 else "🔴")
+st.write(f"Anzahl aktiver Überlastungsindikatoren: {indikator_summe} → {ampel}")
 
-# VZÄ-Bedarf
-st.subheader("VZÄ-Bedarf")
-st.write(f"Benötigte Gesamtstunden: **{gesamtstunden:.1f} Std**")
-st.write(f"Erforderliche VZÄ: **{bedarf_vzae:.2f}**")
+# Zeiger mit Plotly anzeigen
+fig = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = indikator_summe,
+    title = {'text': "Überlastungsindikatoren (0–4)"},
+    gauge = {
+        'axis': {'range': [0, 4]},
+        'bar': {'color': "darkred"},
+        'steps': [
+            {'range': [0, 1], 'color': "lightgreen"},
+            {'range': [1, 3], 'color': "gold"},
+            {'range': [3, 4], 'color': "red"}
+        ]
+    }
+))
+st.plotly_chart(fig)
 
-st.markdown("""---  
-💾 Dieses Mockup dient als Prototyp für dein zukünftiges Web-Dashboard. Eine Exportfunktion (PDF, Excel) und Benutzerverwaltung kann ergänzt werden.""")
+st.markdown("""---
+💾 Hinweis: Dieses Tool befindet sich im Aufbau. Weitere Visualisierungen (z. B. zusätzliche Tachos) und Exportfunktionen folgen.
+""")
